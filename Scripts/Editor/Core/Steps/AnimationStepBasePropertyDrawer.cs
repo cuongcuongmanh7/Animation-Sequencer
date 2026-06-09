@@ -153,12 +153,15 @@ namespace BrunoMikoski.AnimationSequencer
                 var value = field.GetValue(obj);
                 if (field.FieldType.IsGenericType && field.FieldType.GetGenericTypeDefinition() == typeof(List<>))
                 {
-                    var list = (IList)obj;
+                    var list = (IList)value;
                     var clonedList = (IList)Activator.CreateInstance(field.FieldType);
-                    foreach (var item in list)
+                    if (list != null)
                     {
-                        var clonedItem = CloneManagedReference(item, depth - 1);
-                        clonedList.Add(clonedItem);
+                        foreach (var item in list)
+                        {
+                            var clonedItem = CloneManagedReference(item, depth - 1);
+                            clonedList.Add(clonedItem);
+                        }
                     }
                     field.SetValue(clone, clonedList);
                 }
