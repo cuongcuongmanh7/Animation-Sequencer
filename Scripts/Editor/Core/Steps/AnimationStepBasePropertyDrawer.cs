@@ -15,9 +15,28 @@ namespace BrunoMikoski.AnimationSequencer
     {
         protected void DrawBaseGUI(Rect position, SerializedProperty property, GUIContent label, params string[] excludedPropertiesNames)
         {
-            if (GUI.Button(new Rect(position.width - 40, position.y+2, 80, EditorGUIUtility.singleLineHeight - 1), "Duplicate"))
+            float buttonsY = position.y + 2;
+            float buttonHeight = EditorGUIUtility.singleLineHeight - 1;
+
+            // Duplicate and Delete buttons on the step header. The Delete (X) button is kept
+            // small and separated from Duplicate to avoid accidental clicks. Both changes go
+            // through the SerializedObject, so they are undoable with Ctrl+Z.
+            Rect duplicateRect = new Rect(position.width - 102, buttonsY, 70, buttonHeight);
+            Rect deleteRect = new Rect(position.width - 22, buttonsY, 22, buttonHeight);
+
+            if (GUI.Button(duplicateRect, "Duplicate"))
             {
                 DuplicateProperty(property);
+            }
+
+            Color previousBackgroundColor = GUI.backgroundColor;
+            GUI.backgroundColor = new Color(0.92f, 0.42f, 0.42f);
+            bool deleteClicked = GUI.Button(deleteRect, new GUIContent("X", "Delete this step"));
+            GUI.backgroundColor = previousBackgroundColor;
+            if (deleteClicked)
+            {
+                DeleteProperty(property);
+                return;
             }
 
             float originY = position.y;
@@ -92,6 +111,20 @@ namespace BrunoMikoski.AnimationSequencer
                     var newElement = parentArray.GetArrayElementAtIndex(index + 1);
                     newElement.managedReferenceValue = clonedObject;
 
+                    property.serializedObject.ApplyModifiedProperties();
+                }
+            }
+        }
+
+        private void DeleteProperty(SerializedProperty property)
+        {
+            SerializedProperty parentArray = GetParentArrayProperty(property);
+            if (parentArray != null && parentArray.isArray)
+            {
+                int index = GetIndexInArray(property);
+                if (index >= 0 && index < parentArray.arraySize)
+                {
+                    parentArray.DeleteArrayElementAtIndex(index);
                     property.serializedObject.ApplyModifiedProperties();
                 }
             }
