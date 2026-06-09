@@ -27,6 +27,9 @@ namespace BrunoMikoski.AnimationSequencer
             if (GUI.Button(duplicateRect, "Duplicate"))
             {
                 DuplicateProperty(property);
+                // The backing array changed during this OnGUI pass; abort it so the
+                // ReorderableList does not keep iterating stale/!valid elements this frame.
+                GUIUtility.ExitGUI();
             }
 
             Color previousBackgroundColor = GUI.backgroundColor;
@@ -36,7 +39,9 @@ namespace BrunoMikoski.AnimationSequencer
             if (deleteClicked)
             {
                 DeleteProperty(property);
-                return;
+                // The element was removed; abort the current OnGUI pass so the
+                // ReorderableList stops drawing the now-disposed SerializedProperty.
+                GUIUtility.ExitGUI();
             }
 
             float originY = position.y;
