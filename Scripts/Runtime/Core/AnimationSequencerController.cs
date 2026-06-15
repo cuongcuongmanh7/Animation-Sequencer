@@ -150,14 +150,22 @@ namespace BrunoMikoski.AnimationSequencer
             switch (playTypeInternal)
             {
                 case PlayType.Backward:
+                    // Snap to the end state first so "From" tweens don't show their start
+                    // value for one frame before playing backwards.
+                    playingSequence.Goto(playingSequence.Duration(), andPlay: false);
                     playingSequence.PlayBackwards();
                     break;
 
                 case PlayType.Forward:
+                    // Apply the t=0 state immediately. DOTween "From" tweens otherwise only
+                    // set their start value on the first update, which shows the end state
+                    // for one frame before the animation starts (a visible flash/pop on open).
+                    playingSequence.Goto(0f, andPlay: false);
                     playingSequence.PlayForward();
                     break;
 
                 default:
+                    playingSequence.Goto(0f, andPlay: false);
                     playingSequence.Play();
                     break;
             }
