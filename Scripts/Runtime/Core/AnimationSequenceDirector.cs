@@ -17,57 +17,35 @@ namespace BrunoMikoski.AnimationSequencer
     }
 
     /// <summary>
-    /// Drives several <see cref="AnimationSequencerController"/>s from one component.
-    /// Typical use: play sequence "A" on enable, then trigger "B"/"C"/… from runtime events.
+    /// Triggers several <see cref="AnimationSequencerController"/>s by key from one component.
+    /// Typical use: trigger "B"/"C"/… from runtime events on top of a base sequence.
     ///
-    /// Each sequence is an ordinary AnimationSequencerController (with the full inspector/preview),
-    /// usually placed on child GameObjects. The director disables their autoplay and is the single
-    /// runtime entry point. With <see cref="exclusive"/> on, playing a new sequence stops the
-    /// currently playing one.
+    /// Playing on enable is intentionally left to each controller's own autoplay mode
+    /// (set the desired sequence's controller to autoplay = OnEnable). This director only
+    /// handles runtime triggering and, when <see cref="exclusive"/> is on, stops every other
+    /// registered sequence before starting the requested one.
     /// </summary>
     public class AnimationSequenceDirector : MonoBehaviour
     {
         #region Fields
 
-        [Tooltip("Named sequences this director can play. Each references an AnimationSequencerController.")]
+        [Tooltip("Named sequences this director can trigger. Each references an AnimationSequencerController.")]
         [SerializeField] private List<NamedSequence> sequences = new List<NamedSequence>();
 
-        [Tooltip("Key played automatically in OnEnable. Leave empty to play nothing on enable.")]
-        [SerializeField] private string autoPlayKey;
-
-        [Tooltip("When true, playing a sequence stops the one currently playing.")]
+        [Tooltip("When true, playing a sequence stops every other registered sequence first.")]
         [SerializeField] private bool exclusive = true;
 
-        /// <summary>Key of the sequence started most recently (null if none/stopped).</summary>
+        /// <summary>Key of the sequence started most recently via this director (null if none/stopped).</summary>
         public string CurrentKey { get; private set; }
 
         #endregion
 
         #region Lifecycle
 
-        protected virtual void Awake()
-        {
-            // Only the director should drive the child controllers. Awake runs before any
-            // component's OnEnable in the same activation, so this reliably disables their autoplay.
-            for (int i = 0; i < sequences.Count; i++)
-            {
-                AnimationSequencerController controller = sequences[i]?.controller;
-                if (controller != null)
-                    controller.SetAutoplayMode(AnimationSequencerController.AutoplayType.Nothing);
-            }
-        }
-
-        protected virtual void OnEnable()
-        {
-            // Cancel any stray play (e.g. a child still set to autoplay=Awake) before starting.
-            StopAll();
-
-            if (!string.IsNullOrEmpty(autoPlayKey))
-                Play(autoPlayKey);
-        }
-
         protected virtual void OnDisable()
         {
+            // Sequences driven by this director (autoplay = Nothing controllers) won't stop
+            // themselves when the object is disabled, so stop them here as a safety net.
             StopAll();
         }
 
@@ -85,12 +63,8 @@ namespace BrunoMikoski.AnimationSequencer
                 return;
             }
 
-            if (exclusive && !string.IsNullOrEmpty(CurrentKey) && CurrentKey != key)
-            {
-                AnimationSequencerController currentController = FindController(CurrentKey);
-                if (currentController != null && currentController != controller)
-                    currentController.Kill();
-            }
+            if (exclusive)
+                StopOthers(key);
 
             CurrentKey = key;
             controller.Play();
@@ -130,6 +104,19 @@ namespace BrunoMikoski.AnimationSequencer
         #endregion
 
         #region Helpers
+
+        private void StopOthers(string exceptKey)
+        {
+            for (int i = 0; i < sequences.Count; i++)
+            {
+                NamedSequence sequence = sequences[i];
+                if (sequence == null || sequence.controller == null)
+                    continue;
+
+                if (sequence.key != exceptKey)
+                    sequence.controller.Kill();
+            }
+        }
 
         private AnimationSequencerController FindController(string key)
         {

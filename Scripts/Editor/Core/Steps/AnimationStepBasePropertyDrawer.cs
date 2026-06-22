@@ -50,7 +50,7 @@ namespace BrunoMikoski.AnimationSequencer
             SerializedProperty activeProperty = property.FindPropertyRelative("active");
             if (activeProperty != null)
             {
-                Rect toggleRect = new Rect(position.width - 124, buttonsY, 16, buttonHeight);
+                Rect toggleRect = new Rect(position.width - 130, buttonsY, 16, buttonHeight);
                 EditorGUI.BeginChangeCheck();
                 bool newActive = EditorGUI.Toggle(toggleRect,
                     new GUIContent(string.Empty, "Enabled — uncheck to mute (skip) this step"),
