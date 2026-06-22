@@ -66,6 +66,12 @@ namespace BrunoMikoski.AnimationSequencer
             if (exclusive)
                 StopOthers(key);
 
+            // If the target itself is mid-play, reset it first so an interrupted tween
+            // (e.g. punch rotation) doesn't leave a drifted value that the rebuilt
+            // sequence would then capture as its new "initial" state.
+            if (controller.IsPlaying)
+                controller.ResetToInitialState();
+
             CurrentKey = key;
             controller.Play();
         }
@@ -73,9 +79,7 @@ namespace BrunoMikoski.AnimationSequencer
         /// <summary>Stops the sequence registered under <paramref name="key"/>.</summary>
         public void Stop(string key)
         {
-            AnimationSequencerController controller = FindController(key);
-            if (controller != null)
-                controller.Kill();
+            StopSequence(FindController(key));
 
             if (CurrentKey == key)
                 CurrentKey = null;
@@ -85,11 +89,7 @@ namespace BrunoMikoski.AnimationSequencer
         public void StopAll()
         {
             for (int i = 0; i < sequences.Count; i++)
-            {
-                AnimationSequencerController controller = sequences[i]?.controller;
-                if (controller != null)
-                    controller.Kill();
-            }
+                StopSequence(sequences[i]?.controller);
 
             CurrentKey = null;
         }
@@ -114,8 +114,23 @@ namespace BrunoMikoski.AnimationSequencer
                     continue;
 
                 if (sequence.key != exceptKey)
-                    sequence.controller.Kill();
+                    StopSequence(sequence.controller);
             }
+        }
+
+        // Kills a sequence and, only if it was actively playing, resets it to its initial
+        // state. Resetting an already-finished sequence (e.g. an "appear" entrance) would
+        // wrongly snap its targets back to the pre-animation state, so it is gated on IsPlaying.
+        private static void StopSequence(AnimationSequencerController controller)
+        {
+            if (controller == null)
+                return;
+
+            bool wasPlaying = controller.IsPlaying;
+            controller.Kill();
+
+            if (wasPlaying)
+                controller.ResetToInitialState();
         }
 
         private AnimationSequencerController FindController(string key)
