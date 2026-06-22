@@ -50,11 +50,12 @@ namespace BrunoMikoski.AnimationSequencer
             SerializedProperty activeProperty = property.FindPropertyRelative("active");
             if (activeProperty != null)
             {
+                // Bare toggle overload: draws only the checkbox at the rect's left edge.
+                // The GUIContent overload would reserve label space and shove the checkbox
+                // right, up against the Duplicate button.
                 Rect toggleRect = new Rect(position.width - 130, buttonsY, 16, buttonHeight);
                 EditorGUI.BeginChangeCheck();
-                bool newActive = EditorGUI.Toggle(toggleRect,
-                    new GUIContent(string.Empty, "Enabled — uncheck to mute (skip) this step"),
-                    activeProperty.boolValue);
+                bool newActive = EditorGUI.Toggle(toggleRect, activeProperty.boolValue);
                 if (EditorGUI.EndChangeCheck())
                 {
                     activeProperty.boolValue = newActive;
