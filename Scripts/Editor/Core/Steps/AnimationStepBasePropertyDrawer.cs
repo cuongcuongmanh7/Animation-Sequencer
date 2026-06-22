@@ -44,6 +44,25 @@ namespace BrunoMikoski.AnimationSequencer
                 GUIUtility.ExitGUI();
             }
 
+            // Mute toggle in the header, left of Duplicate. Kept always interactive so a muted
+            // step can still be toggled back on. A muted step is skipped at runtime.
+            bool stepActive = true;
+            SerializedProperty activeProperty = property.FindPropertyRelative("active");
+            if (activeProperty != null)
+            {
+                Rect toggleRect = new Rect(position.width - 124, buttonsY, 16, buttonHeight);
+                EditorGUI.BeginChangeCheck();
+                bool newActive = EditorGUI.Toggle(toggleRect,
+                    new GUIContent(string.Empty, "Enabled — uncheck to mute (skip) this step"),
+                    activeProperty.boolValue);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    activeProperty.boolValue = newActive;
+                    property.serializedObject.ApplyModifiedProperties();
+                }
+                stepActive = activeProperty.boolValue;
+            }
+
             float originY = position.y;
 
             position.height = EditorGUIUtility.singleLineHeight;
@@ -61,8 +80,16 @@ namespace BrunoMikoski.AnimationSequencer
                 position.height = EditorGUIUtility.singleLineHeight;
                 position.y +=  EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
 
+                // Grey out the body of a muted step (the mute toggle itself stays enabled above).
+                bool wasGUIEnabled = GUI.enabled;
+                GUI.enabled = stepActive;
+
                 foreach (SerializedProperty serializedProperty in property.GetChildren())
                 {
+                    // 'active' is surfaced as the header mute toggle, not in the body.
+                    if (serializedProperty.name.Equals("active", StringComparison.Ordinal))
+                        continue;
+
                     bool shouldDraw = true;
                     for (int i = 0; i < excludedPropertiesNames.Length; i++)
                     {
@@ -81,7 +108,9 @@ namespace BrunoMikoski.AnimationSequencer
                     position.y += EditorGUI.GetPropertyHeight(serializedProperty) + EditorGUIUtility.standardVerticalSpacing;
 
                 }
-                
+
+                GUI.enabled = wasGUIEnabled;
+
                 if (EditorGUI.EndChangeCheck())
                     property.serializedObject.ApplyModifiedProperties();
             }

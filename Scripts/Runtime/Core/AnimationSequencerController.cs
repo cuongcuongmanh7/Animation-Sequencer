@@ -324,6 +324,9 @@ namespace BrunoMikoski.AnimationSequencer
             for (int i = 0; i < animationSteps.Length; i++)
             {
                 AnimationStepBase animationStepBase = animationSteps[i];
+                // Skip muted steps: they contribute no delay, tween or callback.
+                if (animationStepBase == null || !animationStepBase.IsActive)
+                    continue;
                 animationStepBase.AddTweenToSequence(sequence);
             }
 
@@ -365,7 +368,11 @@ namespace BrunoMikoski.AnimationSequencer
             progress = -1.0f;
             for (int i = animationSteps.Length - 1; i >= 0; i--)
             {
-                animationSteps[i].ResetToInitialState();
+                AnimationStepBase animationStepBase = animationSteps[i];
+                // Muted steps never animated, so they must not force-reset their target.
+                if (animationStepBase == null || !animationStepBase.IsActive)
+                    continue;
+                animationStepBase.ResetToInitialState();
             }
         }
 
