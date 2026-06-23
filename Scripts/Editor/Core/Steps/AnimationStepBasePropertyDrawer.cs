@@ -69,8 +69,8 @@ namespace BrunoMikoski.AnimationSequencer
                 }
                 stepActive = activeProperty.boolValue;
 
-                // Shift the foldout right so its arrow/label doesn't overlap the mute toggle.
-                foldoutRect.xMin += 20;
+                // Shift the foldout right so its arrow/label is clearly separated from the toggle.
+                foldoutRect.xMin += 32;
             }
 
             property.isExpanded = EditorGUI.Foldout(foldoutRect, property.isExpanded, label, true, EditorStyles.foldout);
