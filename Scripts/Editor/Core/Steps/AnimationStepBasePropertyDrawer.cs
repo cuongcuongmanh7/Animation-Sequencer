@@ -44,16 +44,19 @@ namespace BrunoMikoski.AnimationSequencer
                 GUIUtility.ExitGUI();
             }
 
-            // Mute toggle in the header, left of Duplicate. Kept always interactive so a muted
-            // step can still be toggled back on. A muted step is skipped at runtime.
+            float originY = position.y;
+
+            position.height = EditorGUIUtility.singleLineHeight;
+
+            // Mute toggle at the far left of the header (before the foldout), away from the
+            // Duplicate/Delete cluster. Kept always interactive so a muted step can be toggled
+            // back on. A muted step is skipped at runtime.
             bool stepActive = true;
+            Rect foldoutRect = position;
             SerializedProperty activeProperty = property.FindPropertyRelative("active");
             if (activeProperty != null)
             {
-                // Bare toggle overload: draws only the checkbox at the rect's left edge.
-                // The GUIContent overload would reserve label space and shove the checkbox
-                // right, up against the Duplicate button.
-                Rect toggleRect = new Rect(duplicateRect.x - 44, buttonsY, 16, buttonHeight);
+                Rect toggleRect = new Rect(position.x, buttonsY, 16, buttonHeight);
                 EditorGUI.BeginChangeCheck();
                 bool newActive = EditorGUI.Toggle(toggleRect, activeProperty.boolValue);
                 if (EditorGUI.EndChangeCheck())
@@ -62,13 +65,12 @@ namespace BrunoMikoski.AnimationSequencer
                     property.serializedObject.ApplyModifiedProperties();
                 }
                 stepActive = activeProperty.boolValue;
+
+                // Shift the foldout right so its arrow/label doesn't overlap the mute toggle.
+                foldoutRect.xMin += 20;
             }
 
-            float originY = position.y;
-
-            position.height = EditorGUIUtility.singleLineHeight;
-            
-            property.isExpanded = EditorGUI.Foldout(position, property.isExpanded, label, true, EditorStyles.foldout);
+            property.isExpanded = EditorGUI.Foldout(foldoutRect, property.isExpanded, label, true, EditorStyles.foldout);
 
             if (property.isExpanded)
             {
