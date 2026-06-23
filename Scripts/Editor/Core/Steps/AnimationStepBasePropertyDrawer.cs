@@ -18,13 +18,15 @@ namespace BrunoMikoski.AnimationSequencer
             float buttonsY = position.y + 2;
             float buttonHeight = EditorGUIUtility.singleLineHeight - 1;
 
-            // Duplicate and Delete buttons on the step header. The Delete (X) button is kept
-            // small and separated from Duplicate to avoid accidental clicks. Both changes go
-            // through the SerializedObject, so they are undoable with Ctrl+Z.
-            Rect duplicateRect = new Rect(position.width - 102, buttonsY, 70, buttonHeight);
-            Rect deleteRect = new Rect(position.width - 22, buttonsY, 22, buttonHeight);
+            // Duplicate (icon) and Delete (X) buttons, pinned to the right edge of the row.
+            // Both changes go through the SerializedObject, so they are undoable with Ctrl+Z.
+            const float buttonSize = 22f;
+            const float buttonGap = 2f;
+            Rect deleteRect = new Rect(position.xMax - buttonSize, buttonsY, buttonSize, buttonHeight);
+            Rect duplicateRect = new Rect(deleteRect.x - buttonGap - buttonSize, buttonsY, buttonSize, buttonHeight);
 
-            if (GUI.Button(duplicateRect, "Duplicate"))
+            GUIContent duplicateContent = new GUIContent(EditorGUIUtility.IconContent("TreeEditor.Duplicate")) { tooltip = "Duplicate step" };
+            if (GUI.Button(duplicateRect, duplicateContent))
             {
                 DuplicateProperty(property);
                 // The backing array changed during this OnGUI pass; abort it so the
@@ -53,6 +55,7 @@ namespace BrunoMikoski.AnimationSequencer
             // back on. A muted step is skipped at runtime.
             bool stepActive = true;
             Rect foldoutRect = position;
+            foldoutRect.xMax = duplicateRect.x - 4; // keep the label clear of the right-side buttons
             SerializedProperty activeProperty = property.FindPropertyRelative("active");
             if (activeProperty != null)
             {
