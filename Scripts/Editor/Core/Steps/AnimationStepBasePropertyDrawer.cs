@@ -53,7 +53,7 @@ namespace BrunoMikoski.AnimationSequencer
                 // Bare toggle overload: draws only the checkbox at the rect's left edge.
                 // The GUIContent overload would reserve label space and shove the checkbox
                 // right, up against the Duplicate button.
-                Rect toggleRect = new Rect(position.width - 130, buttonsY, 16, buttonHeight);
+                Rect toggleRect = new Rect(duplicateRect.x - 44, buttonsY, 16, buttonHeight);
                 EditorGUI.BeginChangeCheck();
                 bool newActive = EditorGUI.Toggle(toggleRect, activeProperty.boolValue);
                 if (EditorGUI.EndChangeCheck())
