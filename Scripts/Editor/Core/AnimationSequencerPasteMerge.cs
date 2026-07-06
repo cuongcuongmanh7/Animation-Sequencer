@@ -22,19 +22,24 @@ namespace BrunoMikoski.AnimationSequencer
             if (target == null)
                 return;
 
-            // ComponentUtility can only paste onto a component, not read the copy buffer directly,
-            // so paste onto a throwaway instance to read its steps, then discard it.
-            GameObject tempGameObject = new GameObject("__AnimationSequencerPasteTemp")
-            {
-                hideFlags = HideFlags.HideAndDontSave
-            };
+            // ComponentUtility can't read the copy buffer directly, so paste the copied component
+            // onto a throwaway GameObject to read its steps, then discard it. PasteComponentAsNew
+            // adds the copied component fresh (more reliable than AddComponent + PasteComponentValues).
+            GameObject tempGameObject = new GameObject("__AnimationSequencerPasteTemp");
+            tempGameObject.hideFlags = HideFlags.HideInHierarchy;
 
             try
             {
-                AnimationSequencerController temp = tempGameObject.AddComponent<AnimationSequencerController>();
-                if (!ComponentUtility.PasteComponentValues(temp))
+                if (!ComponentUtility.PasteComponentAsNew(tempGameObject))
                 {
                     Debug.LogWarning("[AnimationSequencer] Nothing to paste. Use 'Copy Component' on the source AnimationSequencerController first.");
+                    return;
+                }
+
+                AnimationSequencerController temp = tempGameObject.GetComponent<AnimationSequencerController>();
+                if (temp == null)
+                {
+                    Debug.LogWarning("[AnimationSequencer] The copied component is not an AnimationSequencerController.");
                     return;
                 }
 
