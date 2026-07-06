@@ -190,7 +190,7 @@ namespace BrunoMikoski.AnimationSequencer
             return int.Parse(indexStr);
         }
 
-        private FieldInfo[] GetAllFieldsIncludingBaseTypes(Type type, BindingFlags flags)
+        private static FieldInfo[] GetAllFieldsIncludingBaseTypes(Type type, BindingFlags flags)
         {
             List<FieldInfo> fields = new List<FieldInfo>();
             while (type != null)
@@ -201,7 +201,7 @@ namespace BrunoMikoski.AnimationSequencer
             return fields.ToArray();
         }
 
-        private object CloneManagedReference(object obj, int depth = 2)
+        public static object CloneManagedReference(object obj, int depth = 2)
         {
             if (obj == null) return null;
 
@@ -299,7 +299,7 @@ namespace BrunoMikoski.AnimationSequencer
             return clone;
         }
 
-        private bool IsManagedReferenceField(FieldInfo field)
+        private static bool IsManagedReferenceField(FieldInfo field)
         {
             Type fieldType = field.FieldType;
 
