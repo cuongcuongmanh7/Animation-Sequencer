@@ -8,6 +8,9 @@ namespace BrunoMikoski.AnimationSequencer
     [CustomPropertyDrawer(typeof(DOTweenAnimationStep))]
     public class DOTweenAnimationStepPropertyDrawer : AnimationStepBasePropertyDrawer
     {
+        // Clipboard for copying a single action across steps/objects (holds a deep clone).
+        private static DOTweenActionBase copiedAction;
+
         private void AddNewActionOfType(SerializedProperty actionsSerializedProperty, Type targetType)
         {
             actionsSerializedProperty.arraySize++;
@@ -127,13 +130,30 @@ namespace BrunoMikoski.AnimationSequencer
                 }
 
                 position.height = EditorGUIUtility.singleLineHeight;
-                if (GUI.Button(position, "Add Actions"))
+
+                bool hasCopiedAction = copiedAction != null;
+                Rect addActionsRect = position;
+                if (hasCopiedAction)
+                    addActionsRect.width = position.width - 104;
+
+                if (GUI.Button(addActionsRect, "Add Actions"))
                 {
-                    AnimationSequenceEditorGUIUtility.DOTweenActionsDropdown.Show(position, actionsSerializedProperty, targetSerializedProperty.objectReferenceValue,
+                    AnimationSequenceEditorGUIUtility.DOTweenActionsDropdown.Show(addActionsRect, actionsSerializedProperty, targetSerializedProperty.objectReferenceValue,
                         item =>
                         {
                             AddNewActionOfType(actionsSerializedProperty, item.BaseDOTweenActionType);
                         });
+                }
+
+                if (hasCopiedAction)
+                {
+                    Rect pasteActionRect = position;
+                    pasteActionRect.xMin = addActionsRect.xMax + 4;
+                    if (GUI.Button(pasteActionRect, new GUIContent("Paste Action", $"Paste copied '{copiedAction.DisplayName}'")))
+                    {
+                        SerializedProperty stepProperty = property;
+                        EditorApplication.delayCall += () => PasteCopiedAction(stepProperty);
+                    }
                 }
 
                 position.y += 10;
@@ -147,6 +167,7 @@ namespace BrunoMikoski.AnimationSequencer
 
                     bool guiEnabled = GUI.enabled;
                     DrawDeleteActionButton(position, property, i);
+                    DrawCopyActionButton(position, actionSerializedProperty);
 
                     if (GUI.enabled)
                     {
@@ -204,6 +225,41 @@ namespace BrunoMikoski.AnimationSequencer
             SerializedPropertyExtensions.ClearPropertyCache(actionsPropertyPath.propertyPath);
             actionsPropertyPath.serializedObject.ApplyModifiedProperties();
             actionsPropertyPath.serializedObject.Update();
+        }
+
+        private static void DrawCopyActionButton(Rect position, SerializedProperty actionSerializedProperty)
+        {
+            Rect buttonPosition = position;
+            buttonPosition.width = 44;
+            buttonPosition.x += position.width - 82; // just left of the delete "X" (at width - 34)
+            if (GUI.Button(buttonPosition, new GUIContent("Copy", "Copy this action"), EditorStyles.miniButton))
+            {
+                object action = actionSerializedProperty.managedReferenceValue;
+                if (action != null)
+                    copiedAction = CloneManagedReference(action) as DOTweenActionBase;
+            }
+        }
+
+        private static void PasteCopiedAction(SerializedProperty stepProperty)
+        {
+            if (copiedAction == null || stepProperty == null)
+                return;
+
+            SerializedProperty actionsProperty = stepProperty.FindPropertyRelative("actions");
+            if (actionsProperty == null)
+                return;
+
+            // Deep clone so pasted actions stay independent of the clipboard and each other.
+            object clone = CloneManagedReference(copiedAction);
+            if (clone == null)
+                return;
+
+            int index = actionsProperty.arraySize;
+            actionsProperty.arraySize++;
+            actionsProperty.GetArrayElementAtIndex(index).managedReferenceValue = clone;
+            SerializedPropertyExtensions.ClearPropertyCache(actionsProperty.propertyPath);
+            actionsProperty.serializedObject.ApplyModifiedProperties();
+            actionsProperty.serializedObject.Update();
         }
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
