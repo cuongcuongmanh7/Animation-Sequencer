@@ -50,16 +50,16 @@ namespace BrunoMikoski.AnimationSequencer
 
             position.height = EditorGUIUtility.singleLineHeight;
 
-            // Mute toggle at the far left of the header (before the foldout), away from the
-            // Duplicate/Delete cluster. Kept always interactive so a muted step can be toggled
-            // back on. A muted step is skipped at runtime.
+            // Mute toggle in the right cluster, just left of the Duplicate button. The far-left
+            // area competes with the reorderable-list drag handle and the foldout's click region
+            // (clicks there toggle the foldout instead), so the toggle lives among the right-side
+            // buttons where GUI controls capture clicks reliably.
             bool stepActive = true;
             Rect foldoutRect = position;
-            foldoutRect.xMax = duplicateRect.x - 4; // keep the label clear of the right-side buttons
             SerializedProperty activeProperty = property.FindPropertyRelative("active");
             if (activeProperty != null)
             {
-                Rect toggleRect = new Rect(position.x, buttonsY, 16, buttonHeight);
+                Rect toggleRect = new Rect(duplicateRect.x - 28, buttonsY, 18, buttonHeight);
                 EditorGUI.BeginChangeCheck();
                 bool newActive = EditorGUI.Toggle(toggleRect, activeProperty.boolValue);
                 if (EditorGUI.EndChangeCheck())
@@ -69,8 +69,11 @@ namespace BrunoMikoski.AnimationSequencer
                 }
                 stepActive = activeProperty.boolValue;
 
-                // Shift the foldout right so its arrow/label is clearly separated from the toggle.
-                foldoutRect.xMin += 32;
+                foldoutRect.xMax = toggleRect.x - 4; // keep the label clear of the toggle + buttons
+            }
+            else
+            {
+                foldoutRect.xMax = duplicateRect.x - 4;
             }
 
             property.isExpanded = EditorGUI.Foldout(foldoutRect, property.isExpanded, label, true, EditorStyles.foldout);
@@ -303,8 +306,11 @@ namespace BrunoMikoski.AnimationSequencer
         {
             Type fieldType = field.FieldType;
 
-            //we are not cloning any unity object
-            if (fieldType == typeof(UnityEngine.Object))
+            // Never deep-clone Unity objects (GameObject/Transform/Component/etc.): they are
+            // scene/asset references and must be copied by reference. The previous exact-type
+            // check missed subclasses like GameObject, so the clone recursed into them and broke
+            // the step's target (e.g. a duplicate ended up sharing/losing the source target).
+            if (typeof(UnityEngine.Object).IsAssignableFrom(fieldType))
                 return false;
 
             // If it's object, abstract class, interface, or not sealed
