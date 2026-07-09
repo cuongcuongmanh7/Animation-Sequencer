@@ -193,6 +193,14 @@ namespace BrunoMikoski.AnimationSequencer
             SerializedProperty newElement = refreshedArray.GetArrayElementAtIndex(insertIndex);
             newElement.managedReferenceValue = clonedObject;
 
+            // Clear the target on the duplicate so it does not silently fight the source over the
+            // same object (two tweens on one target conflict in DOTween). The user assigns a fresh
+            // target before the new step does anything. Steps without a target (Wait/Callback) have
+            // no such property and are left untouched.
+            SerializedProperty targetProperty = newElement.FindPropertyRelative("target");
+            if (targetProperty != null)
+                targetProperty.objectReferenceValue = null;
+
             SerializedPropertyExtensions.ClearPropertyCache(parentArray.propertyPath);
             property.serializedObject.ApplyModifiedProperties();
         }
