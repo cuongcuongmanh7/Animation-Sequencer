@@ -13,6 +13,13 @@ namespace BrunoMikoski.AnimationSequencer
     [CustomPropertyDrawer(typeof(AnimationStepBase), true)]
     public class AnimationStepBasePropertyDrawer : PropertyDrawer
     {
+        private static GUIStyle muteIconStyle;
+        private static GUIStyle MuteIconStyle => muteIconStyle ??= new GUIStyle(GUIStyle.none)
+        {
+            alignment = TextAnchor.MiddleCenter,
+            imagePosition = ImagePosition.ImageOnly
+        };
+
         protected void DrawBaseGUI(Rect position, SerializedProperty property, GUIContent label, params string[] excludedPropertiesNames)
         {
             float buttonsY = position.y + 2;
@@ -56,15 +63,16 @@ namespace BrunoMikoski.AnimationSequencer
             // buttons where GUI controls capture clicks reliably.
             bool stepActive = true;
             Rect foldoutRect = position;
+            foldoutRect.xMax = duplicateRect.x - 4; // keep the label clear of the right-side buttons
             SerializedProperty activeProperty = property.FindPropertyRelative("active");
             if (activeProperty != null)
             {
                 stepActive = activeProperty.boolValue;
 
-                // Use GUI.Button rather than EditorGUI.Toggle: inside the ReorderableList element
-                // the toggle didn't reliably receive clicks (they fell through to the foldout),
-                // whereas buttons (like Duplicate/Delete) do. Eye icon: open = enabled, closed = muted.
-                Rect muteRect = new Rect(duplicateRect.x - 34, buttonsY, 24, buttonHeight);
+                // Mute as a borderless eye icon in a left column (just right of the drag handle),
+                // like Unity's visibility toggles. GUI.Button (not EditorGUI.Toggle) so the click
+                // is captured reliably; open eye = enabled, closed = muted.
+                Rect muteRect = new Rect(position.x + 6, buttonsY, 16, buttonHeight);
 
                 string eyeIconName = stepActive ? "animationvisibilitytoggleon" : "animationvisibilitytoggleoff";
                 Texture eyeTexture = EditorGUIUtility.IconContent(eyeIconName).image;
@@ -73,18 +81,14 @@ namespace BrunoMikoski.AnimationSequencer
                     ? new GUIContent(eyeTexture, muteTooltip)
                     : new GUIContent(stepActive ? "V" : "-", muteTooltip);
 
-                if (GUI.Button(muteRect, muteContent, EditorStyles.miniButton))
+                if (GUI.Button(muteRect, muteContent, MuteIconStyle))
                 {
                     activeProperty.boolValue = !stepActive;
                     property.serializedObject.ApplyModifiedProperties();
                     stepActive = activeProperty.boolValue;
                 }
 
-                foldoutRect.xMax = muteRect.x - 4; // keep the label clear of the mute + buttons
-            }
-            else
-            {
-                foldoutRect.xMax = duplicateRect.x - 4;
+                foldoutRect.xMin = muteRect.xMax + 4; // start the label after the eye icon
             }
 
             property.isExpanded = EditorGUI.Foldout(foldoutRect, property.isExpanded, label, true, EditorStyles.foldout);
