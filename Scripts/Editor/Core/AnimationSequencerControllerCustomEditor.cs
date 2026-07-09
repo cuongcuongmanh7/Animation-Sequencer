@@ -68,7 +68,9 @@ namespace BrunoMikoski.AnimationSequencer
 
         public override bool RequiresConstantRepaint()
         {
-            return DOTweenEditorPreview.isPreviewing;
+            // Repaint while previewing, and while the cursor is over an editor window so the
+            // hover-reveal mute eye on each step updates responsively.
+            return DOTweenEditorPreview.isPreviewing || EditorWindow.mouseOverWindow != null;
         }
 
         public override bool UseDefaultMargins()

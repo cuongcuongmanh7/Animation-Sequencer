@@ -74,21 +74,27 @@ namespace BrunoMikoski.AnimationSequencer
                 // is captured reliably; open eye = enabled, closed = muted.
                 Rect muteRect = new Rect(position.x + 6, buttonsY, 16, buttonHeight);
 
-                string eyeIconName = stepActive ? "animationvisibilitytoggleon" : "animationvisibilitytoggleoff";
-                Texture eyeTexture = EditorGUIUtility.IconContent(eyeIconName).image;
-                string muteTooltip = stepActive ? "Enabled — click to mute (skip this step)" : "Muted — click to enable";
-                GUIContent muteContent = eyeTexture != null
-                    ? new GUIContent(eyeTexture, muteTooltip)
-                    : new GUIContent(stepActive ? "V" : "-", muteTooltip);
-
-                if (GUI.Button(muteRect, muteContent, MuteIconStyle))
+                // Show the eye only when muted, or while hovering the row (Unity-style). The column
+                // space is always reserved below so the label doesn't shift when it appears.
+                bool hoveringRow = position.Contains(Event.current.mousePosition);
+                if (!stepActive || hoveringRow)
                 {
-                    activeProperty.boolValue = !stepActive;
-                    property.serializedObject.ApplyModifiedProperties();
-                    stepActive = activeProperty.boolValue;
+                    string eyeIconName = stepActive ? "animationvisibilitytoggleon" : "animationvisibilitytoggleoff";
+                    Texture eyeTexture = EditorGUIUtility.IconContent(eyeIconName).image;
+                    string muteTooltip = stepActive ? "Enabled — click to mute (skip this step)" : "Muted — click to enable";
+                    GUIContent muteContent = eyeTexture != null
+                        ? new GUIContent(eyeTexture, muteTooltip)
+                        : new GUIContent(stepActive ? "V" : "-", muteTooltip);
+
+                    if (GUI.Button(muteRect, muteContent, MuteIconStyle))
+                    {
+                        activeProperty.boolValue = !stepActive;
+                        property.serializedObject.ApplyModifiedProperties();
+                        stepActive = activeProperty.boolValue;
+                    }
                 }
 
-                foldoutRect.xMin = muteRect.xMax + 4; // start the label after the eye icon
+                foldoutRect.xMin = muteRect.xMax + 4; // start the label after the eye icon column
             }
 
             property.isExpanded = EditorGUI.Foldout(foldoutRect, property.isExpanded, label, true, EditorStyles.foldout);
