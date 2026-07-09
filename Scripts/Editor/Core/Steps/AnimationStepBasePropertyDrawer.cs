@@ -59,17 +59,28 @@ namespace BrunoMikoski.AnimationSequencer
             SerializedProperty activeProperty = property.FindPropertyRelative("active");
             if (activeProperty != null)
             {
-                Rect toggleRect = new Rect(duplicateRect.x - 28, buttonsY, 18, buttonHeight);
-                EditorGUI.BeginChangeCheck();
-                bool newActive = EditorGUI.Toggle(toggleRect, activeProperty.boolValue);
-                if (EditorGUI.EndChangeCheck())
-                {
-                    activeProperty.boolValue = newActive;
-                    property.serializedObject.ApplyModifiedProperties();
-                }
                 stepActive = activeProperty.boolValue;
 
-                foldoutRect.xMax = toggleRect.x - 4; // keep the label clear of the toggle + buttons
+                // Use GUI.Button rather than EditorGUI.Toggle: inside the ReorderableList element
+                // the toggle didn't reliably receive clicks (they fell through to the foldout),
+                // whereas buttons (like Duplicate/Delete) do. Red background signals muted.
+                Rect muteRect = new Rect(duplicateRect.x - 38, buttonsY, 28, buttonHeight);
+                Color previousMuteBackground = GUI.backgroundColor;
+                if (!stepActive)
+                    GUI.backgroundColor = new Color(0.92f, 0.42f, 0.42f);
+
+                GUIContent muteContent = new GUIContent(stepActive ? "On" : "Off",
+                    stepActive ? "Enabled — click to mute (skip this step)" : "Muted — click to enable");
+                if (GUI.Button(muteRect, muteContent, EditorStyles.miniButton))
+                {
+                    activeProperty.boolValue = !stepActive;
+                    property.serializedObject.ApplyModifiedProperties();
+                    stepActive = activeProperty.boolValue;
+                }
+
+                GUI.backgroundColor = previousMuteBackground;
+
+                foldoutRect.xMax = muteRect.x - 4; // keep the label clear of the mute + buttons
             }
             else
             {
