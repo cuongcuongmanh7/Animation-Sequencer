@@ -151,23 +151,28 @@ namespace BrunoMikoski.AnimationSequencer
         private void DuplicateProperty(SerializedProperty property)
         {
             SerializedProperty parentArray = GetParentArrayProperty(property);
-            if (parentArray != null && parentArray.isArray)
-            {
-                int index = GetIndexInArray(property);
+            if (parentArray == null || !parentArray.isArray)
+                return;
 
-                object sourceObject = property.managedReferenceValue;
-                object clonedObject = CloneManagedReference(sourceObject);
+            int index = GetIndexInArray(property);
 
-                if (clonedObject != null)
-                {
-                    parentArray.InsertArrayElementAtIndex(index);
+            object sourceObject = property.managedReferenceValue;
+            if (sourceObject == null)
+                return;
 
-                    var newElement = parentArray.GetArrayElementAtIndex(index + 1);
-                    newElement.managedReferenceValue = clonedObject;
+            object clonedObject = CloneManagedReference(sourceObject);
+            if (clonedObject == null)
+                return;
 
-                    property.serializedObject.ApplyModifiedProperties();
-                }
-            }
+            // Insert AFTER the source (at index + 1) so the source element is never shifted or
+            // made to share a managed reference by Unity's insert. Then overwrite the new slot
+            // with an independent clone.
+            int insertIndex = index + 1;
+            parentArray.InsertArrayElementAtIndex(insertIndex);
+            parentArray.GetArrayElementAtIndex(insertIndex).managedReferenceValue = clonedObject;
+
+            SerializedPropertyExtensions.ClearPropertyCache(parentArray.propertyPath);
+            property.serializedObject.ApplyModifiedProperties();
         }
 
         private void DeleteProperty(SerializedProperty property)
