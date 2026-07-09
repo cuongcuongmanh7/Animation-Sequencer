@@ -45,18 +45,36 @@ namespace BrunoMikoski.AnimationSequencer
                 var objs = GetSequencedObjects(sequence);
                 var duration = sequence.Duration();
 
-                // take into account two SequenceCallbacks
-                // that added in AnimationSequencerController.GenerateSequence method
-                if (objs.Count != steps.Length + 2)
+                // Only active (non-muted) steps are added to the sequence, so the sequenced
+                // objects align with active steps plus the two bookend SequenceCallbacks added
+                // in AnimationSequencerController.GenerateSequence.
+                int activeCount = 0;
+                for (int i = 0; i < steps.Length; i++)
+                {
+                    if (steps[i] != null && steps[i].IsActive)
+                        activeCount++;
+                }
+
+                if (objs == null || objs.Count != activeCount + 2)
                 {
                     Debug.LogError("Sequenced object count mismatch for sequence");
                     return null;
                 }
 
-                for (var index = 0; index < Math.Min(timings.Length, objs.Count); index++)
+                int objIndex = 1; // skip the Start Callback
+                for (var index = 0; index < timings.Length; index++)
                 {
-                    var obj = objs[index + 1]; // +1 for skip Start Callback
                     var step = steps[index];
+
+                    // Muted steps contribute nothing to the sequence: no timing bar.
+                    if (step == null || !step.IsActive)
+                    {
+                        timings[index] = (0f, 0f);
+                        continue;
+                    }
+
+                    var obj = objs[objIndex];
+                    objIndex++;
 
                     var start = GetSequencedStartPosition(obj);
                     var end = GetSequencedEndPosition(obj);
