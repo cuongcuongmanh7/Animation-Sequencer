@@ -174,12 +174,24 @@ namespace BrunoMikoski.AnimationSequencer
             if (clonedObject == null)
                 return;
 
-            // Insert AFTER the source (at index + 1) so the source element is never shifted or
-            // made to share a managed reference by Unity's insert. Then overwrite the new slot
-            // with an independent clone.
+            // Insert AFTER the source (at index + 1). Unity's InsertArrayElementAtIndex makes the
+            // new [SerializeReference] slot SHARE the same managed reference id (rid) as its
+            // neighbour. If we overwrite managedReferenceValue in the same pass (before applying),
+            // Unity may fold the assignment back into that shared rid instead of minting a new one
+            // — the duplicate then stays tied to the source (editing one edits both, so both end up
+            // tweening the same target and cancel out). Committing the insert, then Update()-ing,
+            // materialises the shared slot first so the following assignment creates an independent
+            // rid.
             int insertIndex = index + 1;
             parentArray.InsertArrayElementAtIndex(insertIndex);
-            parentArray.GetArrayElementAtIndex(insertIndex).managedReferenceValue = clonedObject;
+            property.serializedObject.ApplyModifiedProperties();
+            property.serializedObject.Update();
+
+            // Re-fetch the array after the Apply/Update round-trip; the previous handle can be stale
+            // once the backing data changed.
+            SerializedProperty refreshedArray = property.serializedObject.FindProperty(parentArray.propertyPath);
+            SerializedProperty newElement = refreshedArray.GetArrayElementAtIndex(insertIndex);
+            newElement.managedReferenceValue = clonedObject;
 
             SerializedPropertyExtensions.ClearPropertyCache(parentArray.propertyPath);
             property.serializedObject.ApplyModifiedProperties();
