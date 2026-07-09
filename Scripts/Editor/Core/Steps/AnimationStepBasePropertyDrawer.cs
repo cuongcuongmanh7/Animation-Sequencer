@@ -63,22 +63,22 @@ namespace BrunoMikoski.AnimationSequencer
 
                 // Use GUI.Button rather than EditorGUI.Toggle: inside the ReorderableList element
                 // the toggle didn't reliably receive clicks (they fell through to the foldout),
-                // whereas buttons (like Duplicate/Delete) do. Red background signals muted.
-                Rect muteRect = new Rect(duplicateRect.x - 38, buttonsY, 28, buttonHeight);
-                Color previousMuteBackground = GUI.backgroundColor;
-                if (!stepActive)
-                    GUI.backgroundColor = new Color(0.92f, 0.42f, 0.42f);
+                // whereas buttons (like Duplicate/Delete) do. Eye icon: open = enabled, closed = muted.
+                Rect muteRect = new Rect(duplicateRect.x - 34, buttonsY, 24, buttonHeight);
 
-                GUIContent muteContent = new GUIContent(stepActive ? "On" : "Off",
-                    stepActive ? "Enabled — click to mute (skip this step)" : "Muted — click to enable");
+                string eyeIconName = stepActive ? "animationvisibilitytoggleon" : "animationvisibilitytoggleoff";
+                Texture eyeTexture = EditorGUIUtility.IconContent(eyeIconName).image;
+                string muteTooltip = stepActive ? "Enabled — click to mute (skip this step)" : "Muted — click to enable";
+                GUIContent muteContent = eyeTexture != null
+                    ? new GUIContent(eyeTexture, muteTooltip)
+                    : new GUIContent(stepActive ? "V" : "-", muteTooltip);
+
                 if (GUI.Button(muteRect, muteContent, EditorStyles.miniButton))
                 {
                     activeProperty.boolValue = !stepActive;
                     property.serializedObject.ApplyModifiedProperties();
                     stepActive = activeProperty.boolValue;
                 }
-
-                GUI.backgroundColor = previousMuteBackground;
 
                 foldoutRect.xMax = muteRect.x - 4; // keep the label clear of the mute + buttons
             }
