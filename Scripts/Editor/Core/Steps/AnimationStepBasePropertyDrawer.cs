@@ -250,7 +250,12 @@ namespace BrunoMikoski.AnimationSequencer
             return fields.ToArray();
         }
 
-        public static object CloneManagedReference(object obj, int depth = 2)
+        // Deep enough to cover any real serialized graph (step -> actions[] -> action -> ease ->
+        // curve). The old cap of 2 bottomed out at nested serializable objects (e.g. an action's
+        // CustomEase) and returned the SOURCE instance unchanged, so a duplicate shared it: editing
+        // one step's ease changed the other and both got stuck. 8 matches Unity's own serialization
+        // depth limit and only acts as an anti-cycle backstop; genuine graphs are far shallower.
+        public static object CloneManagedReference(object obj, int depth = 8)
         {
             if (obj == null) return null;
 
@@ -332,6 +337,20 @@ namespace BrunoMikoski.AnimationSequencer
                     {
                         field.SetValue(clone, clonedEvent);
                     }
+                }
+                else if (field.FieldType == typeof(AnimationCurve))
+                {
+                    // AnimationCurve is a managed class whose keyframes live in native memory, so a
+                    // reflection member-copy produces an empty curve. Clone it through its own API
+                    // instead, giving the duplicate an independent curve (custom eases stay intact).
+                    var sourceCurve = value as AnimationCurve;
+                    field.SetValue(clone, sourceCurve != null
+                        ? new AnimationCurve(sourceCurve.keys)
+                        {
+                            preWrapMode = sourceCurve.preWrapMode,
+                            postWrapMode = sourceCurve.postWrapMode
+                        }
+                        : null);
                 }
                 else if (IsManagedReferenceField(field))
                 {
