@@ -1,4 +1,4 @@
-﻿#if DOTWEEN_ENABLED
+#if DOTWEEN_ENABLED
 using System;
 using DG.Tweening;
 using UnityEngine;
@@ -19,11 +19,11 @@ namespace BrunoMikoski.AnimationSequencer
         }
 
         [SerializeField]
-        private bool active;
+        private bool isActive;
         public bool Active
         {
-            get => active;
-            set => active = value;
+            get => isActive;
+            set => isActive = value;
         }
 
         private bool wasActive;
@@ -31,7 +31,7 @@ namespace BrunoMikoski.AnimationSequencer
         public override void AddTweenToSequence(Sequence animationSequence)
         {
             wasActive = targetGameObject.activeSelf;
-            if (wasActive == active)
+            if (wasActive == isActive)
                 return;
 
             Sequence behaviourSequence = DOTween.Sequence();
@@ -39,7 +39,7 @@ namespace BrunoMikoski.AnimationSequencer
 
             behaviourSequence.AppendCallback(() =>
             {
-                targetGameObject.SetActive(active);
+                targetGameObject.SetActive(isActive);
             });
             if (FlowType == FlowType.Join)
                 animationSequence.Join(behaviourSequence);
@@ -58,7 +58,7 @@ namespace BrunoMikoski.AnimationSequencer
             if (targetGameObject != null)
                 display = targetGameObject.name;
             
-            return $"{index}. Set {display} Active: {active}";
+            return $"{index}. Set {display} Active: {isActive}";
         }    
     }
 }
