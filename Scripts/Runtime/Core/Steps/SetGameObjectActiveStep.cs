@@ -18,7 +18,8 @@ namespace BrunoMikoski.AnimationSequencer
             set => targetGameObject = value;
         }
 
-//
+        [SerializeField]
+        private bool active;
         public bool Active
         {
             get => active;
