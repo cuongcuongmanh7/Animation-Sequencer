@@ -82,8 +82,7 @@ namespace BrunoMikoski.AnimationSequencer
                     animationState.SetAnimation(0, startingAnimation, skeletonGraphic.startingLoop);
             }
 
-            skeletonGraphic.Update(0);
-            skeletonGraphic.LateUpdate();
+            RefreshGraphic();
         }
 
         private void PlayAnimation()
@@ -92,8 +91,7 @@ namespace BrunoMikoski.AnimationSequencer
                 return;
 
             currentTrackEntry = skeletonGraphic.AnimationState.SetAnimation(0, animation, loop);
-            skeletonGraphic.Update(0);
-            skeletonGraphic.LateUpdate();
+            RefreshGraphic();
         }
 
         private void PreviewAnimation(float elapsed)
@@ -104,9 +102,27 @@ namespace BrunoMikoski.AnimationSequencer
                 return;
 
             currentTrackEntry.TrackTime = elapsed;
-            skeletonGraphic.AnimationState.Apply(skeletonGraphic.Skeleton);
-            skeletonGraphic.Skeleton.UpdateWorldTransform();
-            skeletonGraphic.LateUpdate();
+            RefreshGraphic();
+        }
+
+        private void RefreshGraphic()
+        {
+            if (!TryInitializeSkeleton())
+                return;
+
+            UpdateMode previousUpdateMode = skeletonGraphic.UpdateMode;
+            skeletonGraphic.UpdateMode = UpdateMode.FullUpdate;
+            skeletonGraphic.Update(0);
+            skeletonGraphic.UpdateMesh();
+            skeletonGraphic.UpdateMode = previousUpdateMode;
+
+#if UNITY_EDITOR
+            if (!Application.isPlaying)
+            {
+                skeletonGraphic.SetVerticesDirty();
+                Canvas.ForceUpdateCanvases();
+            }
+#endif
         }
 
         private float GetAnimationDuration()
