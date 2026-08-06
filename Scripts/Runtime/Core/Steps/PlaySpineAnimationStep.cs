@@ -1,7 +1,6 @@
 #if DOTWEEN_ENABLED
 using System;
 using DG.Tweening;
-using Spine;
 using Spine.Unity;
 using UnityEngine;
 
@@ -35,7 +34,7 @@ namespace BrunoMikoski.AnimationSequencer
         }
 
         [NonSerialized]
-        private TrackEntry currentTrackEntry;
+        private Spine.TrackEntry currentTrackEntry;
 
         public override string DisplayName => "Play Animation Spine";
 
@@ -71,7 +70,7 @@ namespace BrunoMikoski.AnimationSequencer
             if (!TryInitializeSkeleton())
                 return;
 
-            AnimationState animationState = skeletonGraphic.AnimationState;
+            Spine.AnimationState animationState = skeletonGraphic.AnimationState;
             animationState.ClearTracks();
             skeletonGraphic.Skeleton.SetToSetupPose();
 
@@ -122,7 +121,7 @@ namespace BrunoMikoski.AnimationSequencer
                 string.IsNullOrEmpty(animationName))
                 return false;
 
-            SkeletonData skeletonData = skeletonGraphic.skeletonDataAsset.GetSkeletonData(true);
+            Spine.SkeletonData skeletonData = skeletonGraphic.skeletonDataAsset.GetSkeletonData(true);
             if (skeletonData == null)
                 return false;
 
