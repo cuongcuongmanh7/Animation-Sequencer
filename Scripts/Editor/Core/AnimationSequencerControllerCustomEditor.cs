@@ -465,7 +465,7 @@ namespace BrunoMikoski.AnimationSequencer
                 if (!DOTweenEditorPreview.isPreviewing)
                 {
                     justStartPreviewing = true;
-                    DOTweenEditorPreview.Start();
+                    DOTweenEditorPreview.Start(InternalEditorUtility.RepaintAllViews);
 
                     sequencerController.Play();
                     

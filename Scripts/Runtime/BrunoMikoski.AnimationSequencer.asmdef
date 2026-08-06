@@ -4,7 +4,8 @@
     "references": [
         "DOTween.Modules",
         "Unity.TextMeshPro",
-        "UniTask"
+        "UniTask",
+        "spine-unity"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
