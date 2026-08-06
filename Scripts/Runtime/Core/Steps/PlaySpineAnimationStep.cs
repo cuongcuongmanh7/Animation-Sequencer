@@ -74,6 +74,16 @@ namespace BrunoMikoski.AnimationSequencer
             animationState.ClearTracks();
             skeletonGraphic.Skeleton.SetToSetupPose();
 
+#if UNITY_EDITOR
+            if (!Application.isPlaying && TryGetAnimation(out Spine.Animation previewAnimation))
+            {
+                currentTrackEntry = animationState.SetAnimation(0, previewAnimation, false);
+                currentTrackEntry.TrackTime = 0;
+                RefreshGraphic();
+                return;
+            }
+#endif
+
             if (!string.IsNullOrEmpty(skeletonGraphic.startingAnimation))
             {
                 Spine.Animation startingAnimation = skeletonGraphic.SkeletonData.FindAnimation(
