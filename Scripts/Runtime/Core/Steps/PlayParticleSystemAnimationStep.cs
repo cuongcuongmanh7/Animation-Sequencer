@@ -43,7 +43,7 @@ namespace BrunoMikoski.AnimationSequencer
                 particleSystem.Play();
             });
             
-            sequence.AppendInterval(duration);
+            AppendDuration(sequence);
             sequence.AppendCallback(FinishParticles);
 
             if (FlowType == FlowType.Join)
@@ -54,6 +54,27 @@ namespace BrunoMikoski.AnimationSequencer
 
         public override void ResetToInitialState()
         {
+#if UNITY_EDITOR
+            if (!Application.isPlaying && particleSystem != null)
+                particleSystem.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+#endif
+        }
+
+        private void AppendDuration(Sequence sequence)
+        {
+#if UNITY_EDITOR
+            if (!Application.isPlaying)
+            {
+                sequence.Append(DOVirtual.Float(0, duration, duration, elapsed =>
+                {
+                    if (particleSystem != null)
+                        particleSystem.Simulate(elapsed, true, true, false);
+                }).SetEase(Ease.Linear));
+                return;
+            }
+#endif
+
+            sequence.AppendInterval(duration);
         }
 
         private void FinishParticles()
